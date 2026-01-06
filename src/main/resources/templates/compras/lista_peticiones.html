@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <title>Solicitudes de Compra</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+<div th:replace="~{fragments/navbar :: nav}"></div>
+
+<div class="container mt-4">
+    <h2 th:text="${titulo}">Solicitudes</h2>
+
+    <div th:if="${info}" class="alert alert-info" th:text="${info}"></div>
+    <div th:if="${success}" class="alert alert-success" th:text="${success}"></div>
+    <div th:if="${warning}" class="alert alert-warning" th:text="${warning}"></div>
+
+    <table class="table table-bordered">
+        <thead>
+        <tr>
+            <th>Fecha</th>
+            <th>Solicitante</th>
+            <th>Producto</th>
+            <th>Destino (Almacén)</th>
+            <th>Cantidad</th>
+            <th>Estado</th>
+            <th sec:authorize="hasAuthority('ADMIN')">Acciones</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="sol : ${solicitudes}">
+            <td th:text="${#temporals.format(sol.fechaSolicitud, 'dd-MM-yyyy HH:mm')}"></td>
+            <td th:text="${sol.usuarioSolicitante}"></td>
+            <td th:text="${sol.producto.nombre}"></td>
+            <td th:text="${sol.almacen.nombre}"></td>
+            <td th:text="${sol.cantidad}"></td>
+            <td>
+                <span th:if="${sol.estado.name() == 'PENDIENTE'}" class="badge bg-warning text-dark">PENDIENTE</span>
+                <span th:if="${sol.estado.name() == 'APROBADO'}" class="badge bg-success">APROBADO</span>
+                <span th:if="${sol.estado.name() == 'RECHAZADO'}" class="badge bg-danger">RECHAZADO</span>
+            </td>
+
+            <td sec:authorize="hasAuthority('ADMIN')">
+                <div th:if="${sol.estado.name() == 'PENDIENTE'}">
+                    <a th:href="@{/compras/aprobar/{id}(id=${sol.id})}" class="btn btn-sm btn-success">✔ Aprobar</a>
+                    <a th:href="@{/compras/rechazar/{id}(id=${sol.id})}" class="btn btn-sm btn-danger">✖ Rechazar</a>
+                </div>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+
+    <div th:if="${#lists.isEmpty(solicitudes)}" class="alert alert-secondary text-center">
+        No hay solicitudes registradas.
+    </div>
+</div>
+</body>
+</html>

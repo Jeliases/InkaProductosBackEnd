@@ -1,0 +1,44 @@
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+    <div class="container-fluid">
+        <a class="navbar-brand" th:href="@{/}">
+            <i class="fas fa-boxes me-2"></i> INKA PRODUCTOS
+        </a>
+
+        <div class="collapse navbar-collapse">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                <li class="nav-item">
+                    <a class="nav-link" th:href="@{/inventario}">Inventario General</a>
+                </li>
+
+                <li class="nav-item" sec:authorize="hasAuthority('ADMIN')">
+                    <a class="nav-link" th:href="@{/productos}">Gestionar Productos</a>
+                </li>
+                <li class="nav-item" sec:authorize="hasAuthority('ADMIN')">
+                    <a class="nav-link" th:href="@{/usuarios}">Gestionar Usuarios</a>
+                </li>
+
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                        Compras y Solicitudes
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" th:href="@{/compras/nueva}">
+                            <span sec:authorize="hasAuthority('ADMIN')">Nueva Compra Directa</span>
+                            <span sec:authorize="hasAuthority('USER')">Solicitar Stock</span>
+                        </a></li>
+
+                        <li><a class="dropdown-item" th:href="@{/compras/peticiones}">
+                            <span sec:authorize="hasAuthority('ADMIN')">Bandeja de Aprobaciones</span>
+                            <span sec:authorize="hasAuthority('USER')">Mis Solicitudes</span>
+                        </a></li>
+                    </ul>
+                </li>
+            </ul>
+
+            <form th:action="@{/logout}" method="post" class="d-flex">
+                <span class="navbar-text text-white me-3">Hola, [[${#authentication.name}]]</span>
+                <button class="btn btn-outline-danger" type="submit">Salir</button>
+            </form>
+        </div>
+    </div>
+</nav>

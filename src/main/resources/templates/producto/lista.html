@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Gestión de Productos</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+
+<div th:replace="~{fragments/navbar :: nav}"></div>
+
+<div class="container mt-4">
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2><i class="fas fa-tags"></i> Gestión de Productos</h2>
+        <a th:href="@{/productos/nuevo}" class="btn btn-primary">
+            <i class="fas fa-plus-circle"></i> Nuevo Producto
+        </a>
+    </div>
+
+    <div th:if="${success}" class="alert alert-success alert-dismissible fade show" role="alert">
+        <span th:text="${success}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    <div th:if="${error}" class="alert alert-danger alert-dismissible fade show" role="alert">
+        <span th:text="${error}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-body p-0">
+            <table class="table table-striped table-hover mb-0 align-middle">
+                <thead class="table-dark">
+                <tr>
+                    <th>SKU</th>
+                    <th>Nombre</th>
+                    <th>Categoría</th>
+                    <th class="text-end">Precio Lista</th>
+                    <th class="text-center">Estado</th>
+                    <th class="text-center">Acciones</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="prod : ${productos}">
+                    <td><span class="badge bg-light text-dark border" th:text="${prod.sku}"></span></td>
+                    <td th:text="${prod.nombre}" class="fw-bold"></td>
+                    <td th:text="${prod.categoria.nombre}"></td>
+                    <td class="text-end" th:text="'S/ ' + ${#numbers.formatDecimal(prod.precioLista, 1, 2)}"></td>
+
+                    <td class="text-center">
+                        <span th:if="${prod.activo}" class="badge bg-success">Activo</span>
+                        <span th:unless="${prod.activo}" class="badge bg-secondary">Inactivo</span>
+                    </td>
+
+                    <td class="text-center">
+                        <div class="btn-group" role="group">
+                            <a th:href="@{/productos/editar/{id}(id=${prod.productoId})}" class="btn btn-sm btn-warning" title="Editar">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            <a th:href="@{/productos/eliminar/{id}(id=${prod.productoId})}"
+                               class="btn btn-sm btn-danger"
+                               onclick="return confirm('¿Estás seguro? Esto podría afectar el historial si el producto ya tiene movimientos.');"
+                               title="Eliminar">
+                                <i class="fas fa-trash"></i>
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
