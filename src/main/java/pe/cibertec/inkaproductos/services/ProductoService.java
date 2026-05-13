@@ -134,7 +134,7 @@ public class ProductoService {
             throw new RuntimeException("Solo el administrador puede realizar movimientos directos.");
         }
 
-        // Primero mover stock REAL
+        // 1. Mover stock REAL en bucle
         for (ItemCarritoDTO item : dto.getItems()) {
             moverStock(
                     dto.getOrigenId(),
@@ -144,13 +144,15 @@ public class ProductoService {
             );
         }
 
-        // Luego registrar el movimiento en historial
+        // 2. Registrar el movimiento en el historial
         movimientoService.registrarMovimiento(
                 dto.getUsuarioEmail(),
                 dto.getOrigenId(),
                 dto.getDestinoId(),
                 dto.getItems()
         );
-    }
 
+        // 3. Forzar sincronización inmediata con MySQL antes de responder al Frontend
+        inventarioRepo.flush();
+    }
 }

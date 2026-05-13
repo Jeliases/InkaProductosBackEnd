@@ -1,59 +1,35 @@
 package pe.cibertec.inkaproductos.config;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.*;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
-import org.springframework.security.config.Customizer;
-import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.core.userdetails.*;
+import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
+import pe.cibertec.inkaproductos.security.JwtFilter;
 
 import java.util.List;
 
 @Configuration
+@RequiredArgsConstructor
 public class SecurityConfig {
 
-    // ============================
-    // USERS EN MEMORIA
-    // ============================
-    @Bean
-    public UserDetailsService userDetailsService() {
-
-        PasswordEncoder encoder = passwordEncoder();
-
-        UserDetails admin = User.builder()
-                .username("admin@inkaproductos.com")
-                .password(encoder.encode("admin123"))
-                .roles("ADMIN")
-                .build();
-
-        UserDetails user = User.builder()
-                .username("user@inkaproductos.com")
-                .password(encoder.encode("user123"))
-                .roles("USER")
-                .build();
-
-        UserDetails ti = User.builder()
-                .username("gestionti@inkaproductos.com")
-                .password(encoder.encode("ti123"))
-                .roles("TI")
-                .build();
-
-        return new InMemoryUserDetailsManager(admin, user, ti);
-    }
+    private final JwtFilter jwtFilter;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
-    // AUTH PROVIDER
+
     @Bean
     public AuthenticationProvider authProvider(UserDetailsService uds) {
         DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
@@ -63,24 +39,14 @@ public class SecurityConfig {
     }
 
     @Bean
-    public AuthenticationManager authenticationManager(HttpSecurity http,
-                                                       AuthenticationProvider provider)
-            throws Exception {
-
-        AuthenticationManagerBuilder builder =
-                http.getSharedObject(AuthenticationManagerBuilder.class);
-
-        builder.authenticationProvider(provider);
-
-        return builder.build();
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
+        return config.getAuthenticationManager();
     }
-
-    // SECURITY FILTER CHAIN
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 
-        // CORS
+        // CORS CONFIG
         http.cors(cors -> cors.configurationSource(request -> {
             CorsConfiguration config = new CorsConfiguration();
             config.setAllowedOrigins(List.of("http://localhost:4200"));
@@ -90,48 +56,27 @@ public class SecurityConfig {
             return config;
         }));
 
-        // CSRF OFF para SPA (Angular)
-        http.csrf(csrf -> csrf.disable());
+        http.csrf(csrf -> csrf.disable())
+                // MUY IMPORTANTE: Como es JWT, no queremos sesiones en el servidor
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/api/auth/**").permitAll() // LOGIN Y REGISTRO LIBRES
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
-        // RULES
-        http.authorizeHttpRequests(auth -> auth
+                        // GETs públicos
+                        .requestMatchers(HttpMethod.GET, "/api/categorias/**", "/api/almacenes/**", "/api/productos/**").permitAll()
 
-                // LOGIN libre
-                .requestMatchers("/api/auth/login").permitAll()
+                        // ROLES: ADMIN, USER, TI
+                        .requestMatchers("/api/solicitudes/**").hasAnyRole("USER", "ADMIN")
+                        .requestMatchers("/api/productos/transaccion/**").hasRole("ADMIN")
+                        .requestMatchers("/api/usuarios/**").hasRole("TI")
 
-                // Preflight
-                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        .anyRequest().authenticated()
+                );
 
-                // Públicos
-                .requestMatchers(HttpMethod.GET, "/api/categorias/**").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/almacenes/**").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/productos/**").permitAll()
-
-                // USER
-                .requestMatchers(HttpMethod.POST, "/api/solicitudes").hasRole("USER")
-                .requestMatchers(HttpMethod.GET, "/api/solicitudes/mias").hasRole("USER")
-
-                // ADMIN
-                .requestMatchers(HttpMethod.POST, "/api/productos/transaccion").hasRole("ADMIN")
-                .requestMatchers("/api/aprobaciones/**").hasRole("ADMIN")
-
-                // TI
-
-                .requestMatchers(HttpMethod.GET, "/api/usuarios/**").hasRole("TI")
-                .requestMatchers(HttpMethod.POST, "/api/usuarios/**").hasRole("TI")
-                .requestMatchers(HttpMethod.PUT, "/api/usuarios/**").hasRole("TI")
-                .requestMatchers(HttpMethod.DELETE, "/api/usuarios/**").hasRole("TI")
-
-
-                // Todo lo demás requiere login
-                .anyRequest().authenticated()
-        );
-
-
-        http.httpBasic(Customizer.withDefaults());
+        // REGISTRAMOS EL FILTRO JWT ANTES DEL FILTRO DE LOGIN POR DEFECTO
+        http.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
-
-
 }

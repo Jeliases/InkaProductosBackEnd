@@ -49,20 +49,19 @@ public class ProductoController {
     @PostMapping("/transaccion")
     public ResponseEntity<?> procesarTransaccion(@RequestBody TransaccionDTO dto,
                                                  Principal principal) {
-
         try {
             dto.setEsAdmin(true);
-            dto.setUsuarioEmail(principal.getName()); // <-- ESTA ES LA CLAVE 🔥
+            // El interceptor JWT carga el correo automáticamente aquí desde la cabecera
+            dto.setUsuarioEmail(principal.getName());
 
             productoService.procesarTransaccion(dto);
 
-            return ResponseEntity.ok(Map.of("mensaje", "Transacción registrada"));
+            return ResponseEntity.ok(Map.of("mensaje", "Transacción registrada con éxito"));
         }
         catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
-
 
 
 
