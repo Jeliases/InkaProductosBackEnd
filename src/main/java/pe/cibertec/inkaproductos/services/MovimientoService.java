@@ -4,7 +4,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pe.cibertec.inkaproductos.dto.ItemCarritoDTO;
-import pe.cibertec.inkaproductos.dto.TransaccionDTO;
 import pe.cibertec.inkaproductos.models.*;
 import pe.cibertec.inkaproductos.repositories.*;
 
@@ -15,58 +14,36 @@ import java.util.List;
 @RequiredArgsConstructor
 public class MovimientoService {
 
+    private final MovimientoStockRepository kardexRepo;
     private final MovimientoRepository movRepo;
-    private final MovimientoDetalleRepository detalleRepo;
-    private final AlmacenRepository almacenRepo;
+    private final MovimientoDetalleRepository detalleRepo; // ¡Faltaba esto!
     private final ProductoRepository productoRepo;
+    private final AlmacenRepository almacenRepo;
 
-    // ===========================
-    // REGISTRAR MOVIMIENTO REAL
-    // ===========================
     @Transactional
-    public Movimiento registrarMovimiento(
-            String usuario,
-            Integer origenId,
-            Integer destinoId,
-            List<ItemCarritoDTO> items) {
+    public void registrarMovimientoEnKardex(
+            Producto prod, Almacen origen, Almacen destino,
+            Double stockAnt, Double cant, Double stockNue,
+            String user, TipoOperacion tipo) {
 
-        Movimiento mov = new Movimiento();
-        mov.setUsuario(usuario);
-        mov.setFecha(LocalDateTime.now());
-        mov.setOrigen(almacenRepo.findById(origenId).orElseThrow());
-        mov.setDestino(almacenRepo.findById(destinoId).orElseThrow());
-        mov.setEstado(Movimiento.EstadoMovimiento.APROBADO);
+        MovimientoStock ms = new MovimientoStock();
+        ms.setProducto(prod);
+        ms.setOrigen(origen);
+        ms.setDestino(destino);
+        ms.setStockAnterior(stockAnt);
+        ms.setCantidadMovida(cant);
+        ms.setStockNuevo(stockNue);
+        ms.setUsuario(user);
+        ms.setTipoOperacion(tipo);
 
-        mov = movRepo.save(mov);
-
-        for (ItemCarritoDTO item : items) {
-
-            MovimientoDetalle md = new MovimientoDetalle();
-            md.setMovimiento(mov);
-            md.setProducto(productoRepo.findById(item.getProductoId()).orElseThrow());
-            md.setCantidad(item.getCantidad());
-
-            detalleRepo.save(md);
-        }
-
-        return mov;
+        kardexRepo.save(ms);
     }
 
-    // ===========================
-    // HISTORIAL COMPLETO
-    // ===========================
     public List<Movimiento> listarHistorial() {
         return movRepo.findAll();
     }
 
-    // ===========================
-    // DETALLES DE MOVIMIENTO
-    // ===========================
     public List<MovimientoDetalle> listarDetalles(Integer movId) {
         return detalleRepo.findByMovimientoId(movId);
     }
-
-
-
-
 }

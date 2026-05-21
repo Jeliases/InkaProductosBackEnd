@@ -46,7 +46,6 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 
-        // CORS CONFIG
         http.cors(cors -> cors.configurationSource(request -> {
             CorsConfiguration config = new CorsConfiguration();
             config.setAllowedOrigins(List.of("http://localhost:4200"));
@@ -57,24 +56,39 @@ public class SecurityConfig {
         }));
 
         http.csrf(csrf -> csrf.disable())
-                // MUY IMPORTANTE: Como es JWT, no queremos sesiones en el servidor
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/**").permitAll() // LOGIN Y REGISTRO LIBRES
+
+                        // OPTIONS siempre libre (preflight CORS)
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
-                        // GETs públicos
-                        .requestMatchers(HttpMethod.GET, "/api/categorias/**", "/api/almacenes/**", "/api/productos/**").permitAll()
+                        // Login / registro público
+                        .requestMatchers("/api/auth/**").permitAll()
 
-                        // ROLES: ADMIN, USER, TI
+                        // ── REGLAS ESPECÍFICAS PRIMERO (más específico → menos específico) ──
+
+                        // POST /transaccion solo ADMIN  (debe ir ANTES del permitAll de GETs)
+                        .requestMatchers(HttpMethod.POST, "/api/productos/transaccion").hasRole("ADMIN")
+
+                        // GETs de catálogos son públicos
+                        .requestMatchers(HttpMethod.GET,
+                                "/api/categorias/**",
+                                "/api/almacenes/**",
+                                "/api/productos/**").permitAll()
+
+                        // Solicitudes: USER o ADMIN
                         .requestMatchers("/api/solicitudes/**").hasAnyRole("USER", "ADMIN")
-                        .requestMatchers("/api/productos/transaccion/**").hasRole("ADMIN")
+
+                        // Aprobaciones: solo ADMIN
+                        .requestMatchers("/api/aprobaciones/**").hasRole("ADMIN")
+
+                        // Usuarios: solo TI
                         .requestMatchers("/api/usuarios/**").hasRole("TI")
 
+                        // Todo lo demás requiere autenticación
                         .anyRequest().authenticated()
                 );
 
-        // REGISTRAMOS EL FILTRO JWT ANTES DEL FILTRO DE LOGIN POR DEFECTO
         http.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

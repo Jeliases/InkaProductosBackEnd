@@ -50,7 +50,7 @@ public class ProductoController {
     public ResponseEntity<?> procesarTransaccion(@RequestBody TransaccionDTO dto,
                                                  Principal principal) {
         try {
-            dto.setEsAdmin(true);
+
             // El interceptor JWT carga el correo automáticamente aquí desde la cabecera
             dto.setUsuarioEmail(principal.getName());
 
