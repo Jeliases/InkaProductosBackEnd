@@ -24,7 +24,7 @@ public class TrasladoService {
     private final MovimientoStockRepository kardexRepo;
     private final AlmacenRepository       almacenRepo;
     private final ProductoRepository      productoRepo;
-    private final StockEventPublisher     publisher;
+    private final StockEventPublisher publisher;
 
     private static final AtomicInteger SEQ = new AtomicInteger(1);
 

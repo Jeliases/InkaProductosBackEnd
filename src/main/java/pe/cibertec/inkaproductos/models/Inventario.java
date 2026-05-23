@@ -2,6 +2,10 @@ package pe.cibertec.inkaproductos.models;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import pe.cibertec.inkaproductos.models.Almacen;
+import pe.cibertec.inkaproductos.models.InventarioId;
+import pe.cibertec.inkaproductos.models.Producto;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
@@ -21,5 +25,12 @@ public class Inventario {
     private Producto producto;
 
     private BigDecimal cantidad = BigDecimal.ZERO;
+
     private LocalDateTime actualizado;
+
+    @PrePersist
+    @PreUpdate
+    public void touch() {
+        this.actualizado = LocalDateTime.now();
+    }
 }
