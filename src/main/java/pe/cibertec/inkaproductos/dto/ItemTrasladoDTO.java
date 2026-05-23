@@ -1,9 +1,10 @@
 package pe.cibertec.inkaproductos.dto;
 
 import lombok.Data;
+import java.math.BigDecimal;
 
 @Data
-public class ItemCarritoDTO {
+public class ItemTrasladoDTO {
     private Integer productoId;
-    private Double cantidad;
+    private BigDecimal cantidad;
 }

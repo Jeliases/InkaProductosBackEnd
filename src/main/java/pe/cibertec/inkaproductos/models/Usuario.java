@@ -2,33 +2,20 @@ package pe.cibertec.inkaproductos.models;
 
 import jakarta.persistence.*;
 import lombok.Data;
-import java.util.List;
+import java.util.Set;
 
-@Data
-@Entity
-@Table(name = "usuario")
+@Data @Entity @Table(name = "usuario")
 public class Usuario {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long usuarioId;
-
     private String nombre;
-
-    @Column(unique = true, nullable = false)
     private String email;
-
-    @Column(name = "password_hash", nullable = false)
-    private String password;
-
-    private Integer enabled;
+    private String passwordHash;
+    private boolean enabled = true;
 
     @ManyToMany(fetch = FetchType.EAGER)
-    @JoinTable(
-            name = "usuario_roles",
-            joinColumns = @JoinColumn(name = "usuario_id"),
-            inverseJoinColumns = @JoinColumn(name = "rol_id")
-    )
-    private List<Rol> roles;
-
-
+    @JoinTable(name = "usuario_roles",
+        joinColumns = @JoinColumn(name = "usuario_id"),
+        inverseJoinColumns = @JoinColumn(name = "rol_id"))
+    private Set<Rol> roles;
 }

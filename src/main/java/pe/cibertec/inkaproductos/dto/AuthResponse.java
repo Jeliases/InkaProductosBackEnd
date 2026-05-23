@@ -2,13 +2,11 @@ package pe.cibertec.inkaproductos.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import java.util.List;
 
-@Data
-@AllArgsConstructor
-public class AuthResponseDTO {
+@Data @AllArgsConstructor
+public class AuthResponse {
     private String token;
     private String email;
+    private String rol;
     private String nombre;
-    private List<String> roles;
 }

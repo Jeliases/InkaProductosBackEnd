@@ -2,12 +2,11 @@ package pe.cibertec.inkaproductos.controllers;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
-import pe.cibertec.inkaproductos.dto.TransaccionDTO;
-import pe.cibertec.inkaproductos.models.SolicitudCompra;
+import pe.cibertec.inkaproductos.dto.SolicitudRequest;
 import pe.cibertec.inkaproductos.services.SolicitudService;
 
-import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -17,30 +16,43 @@ public class SolicitudController {
 
     private final SolicitudService solicitudService;
 
-
-    @GetMapping("/mias")
-    public List<SolicitudCompra> misSolicitudes(@RequestParam String email) {
-        return solicitudService.listarPorUsuario(email);
-    }
-
-    @GetMapping("/pendientes")
-    public List<SolicitudCompra> pendientes() {
-        return solicitudService.listarPendientes();
-    }
-
     @PostMapping
-    public ResponseEntity<?> crearSolicitud(@RequestBody TransaccionDTO dto) {
+    public ResponseEntity<?> crear(@RequestBody SolicitudRequest req,
+                                   Authentication auth) {
         try {
-            dto.setEsAdmin(false);
-            SolicitudCompra solicitud = solicitudService.crearSolicitud(dto);
-
-            return ResponseEntity.ok(solicitud);
-
+            return ResponseEntity.ok(solicitudService.crear(req, auth.getName()));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(
-                    Map.of("error", e.getMessage())
-            );
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
 
+    @GetMapping("/pendientes")
+    public ResponseEntity<?> pendientes() {
+        return ResponseEntity.ok(solicitudService.pendientes());
+    }
+
+    @GetMapping("/mis")
+    public ResponseEntity<?> misSolicitudes(Authentication auth) {
+        return ResponseEntity.ok(solicitudService.misSolicitudes(auth.getName()));
+    }
+
+    @PutMapping("/{id}/aprobar")
+    public ResponseEntity<?> aprobar(@PathVariable Integer id, Authentication auth) {
+        try {
+            solicitudService.aprobar(id, auth.getName());
+            return ResponseEntity.ok(Map.of("mensaje", "Solicitud aprobada y traslado ejecutado"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @PutMapping("/{id}/rechazar")
+    public ResponseEntity<?> rechazar(@PathVariable Integer id) {
+        try {
+            solicitudService.rechazar(id);
+            return ResponseEntity.ok(Map.of("mensaje", "Solicitud rechazada"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
 }

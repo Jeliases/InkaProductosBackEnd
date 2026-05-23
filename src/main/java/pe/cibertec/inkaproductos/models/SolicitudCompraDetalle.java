@@ -1,28 +1,21 @@
 package pe.cibertec.inkaproductos.models;
 
-
 import jakarta.persistence.*;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
+import java.math.BigDecimal;
 
-@Data
-@Entity
-@Table(name = "solicitud_compra_detalle")
+@Data @Entity @Table(name = "solicitud_compra_detalle")
 public class SolicitudCompraDetalle {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer detalleId;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "solicitud_id")
-    @JsonIgnore // Evita recursividad infinita en el JSON REST [cite: 3089]
     private SolicitudCompra solicitud;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "producto_id")
     private Producto producto;
 
-    private Double cantidad;
-
-
+    private BigDecimal cantidad;
 }

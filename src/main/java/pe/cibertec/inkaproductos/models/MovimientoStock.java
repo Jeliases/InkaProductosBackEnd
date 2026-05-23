@@ -2,51 +2,35 @@ package pe.cibertec.inkaproductos.models;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-@Data
-@Entity
-@Table(name = "movimiento_stock")
+@Data @Entity @Table(name = "movimiento_stock")
 public class MovimientoStock {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "movimiento_id")
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long movimientoId;
 
-    @Column(name = "fecha")
     private LocalDateTime fecha = LocalDateTime.now();
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "tipo_operacion", nullable = false)
     private TipoOperacion tipoOperacion;
 
-    @ManyToOne
-    @JoinColumn(name = "producto_id", nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "producto_id")
     private Producto producto;
 
-    @ManyToOne
-    @JoinColumn(name = "almacen_origen_id", nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "almacen_origen_id")
     private Almacen origen;
 
-    @ManyToOne
-    @JoinColumn(name = "almacen_destino_id", nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "almacen_destino_id")
     private Almacen destino;
 
-    @Column(name = "stock_anterior", nullable = false)
-    private Double stockAnterior;
-
-    @Column(name = "cantidad_movida", nullable = false)
-    private Double cantidadMovida;
-
-    @Column(name = "stock_nuevo", nullable = false)
-    private Double stockNuevo;
-
-    @Column(name = "usuario", nullable = false)
+    private BigDecimal stockAnterior;
+    private BigDecimal cantidadMovida;
+    private BigDecimal stockNuevo;
     private String usuario;
-
-    @Column(name = "referencia")
     private String referencia;
-
-    @Column(name = "observacion")
     private String observacion;
 }
