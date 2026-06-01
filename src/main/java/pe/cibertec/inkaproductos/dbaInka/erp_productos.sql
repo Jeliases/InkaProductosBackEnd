@@ -13,7 +13,7 @@ CREATE TABLE rol (
                      nombre   VARCHAR(50)     NOT NULL,
                      CONSTRAINT pk_rol    PRIMARY KEY (rol_id),
                      CONSTRAINT uq_rol_nm UNIQUE (nombre)
-) ENGINE=InnoDB COMMENT='Roles de acceso al sistema (ADMIN, USER, TI)';
+) ENGINE=InnoDB COMMENT='Roles de acceso al sistema (ADMIN, SUPERVISOR, USUARIO)';
 
 CREATE TABLE usuario (
                          usuario_id    BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -31,7 +31,7 @@ CREATE TABLE usuario_roles (
                                rol_id     BIGINT UNSIGNED NOT NULL,
                                CONSTRAINT pk_usu_rol   PRIMARY KEY (usuario_id, rol_id),
                                CONSTRAINT fk_usu_rol_u FOREIGN KEY (usuario_id) REFERENCES usuario (usuario_id) ON DELETE CASCADE,
-                               CONSTRAINT fk_usu_rol_r FOREIGN KEY (rol_id)     REFERENCES rol     (rol_id)     ON DELETE RESTRICT
+                               CONSTRAINT fk_usu_rol_r FOREIGN KEY (rol_id)     REFERENCES rol      (rol_id)     ON DELETE RESTRICT
 ) ENGINE=InnoDB;
 
 -- ============================================================
@@ -90,7 +90,7 @@ CREATE TABLE almacen (
 -- ============================================================
 -- 5. INVENTARIO — Foto actual del stock (saldo)
 -- ============================================================
-select * from producto;
+
 CREATE TABLE inventario (
                             almacen_id  INT UNSIGNED    NOT NULL,
                             producto_id INT UNSIGNED    NOT NULL,
@@ -109,21 +109,21 @@ CREATE TABLE inventario (
 -- ============================================================
 
 CREATE TABLE movimiento_stock (
-                                  movimiento_id     BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-                                  fecha             DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                                  tipo_operacion    ENUM('ENTRADA','SALIDA','TRASLADO','AJUSTE','DEVOLUCION')
-                                      NOT NULL,
-                                  producto_id       INT UNSIGNED    NOT NULL,
-                                  almacen_origen_id INT UNSIGNED    NOT NULL  COMMENT 'En ENTRADAs puede ser el almacén proveedor/virtual',
+                                  movimiento_id      BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+                                  fecha              DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                                  tipo_operacion     ENUM('ENTRADA','SALIDA','TRASLADO','AJUSTE','DEVOLUCION')
+                                       NOT NULL,
+                                  producto_id        INT UNSIGNED    NOT NULL,
+                                  almacen_origen_id  INT UNSIGNED    NOT NULL  COMMENT 'En ENTRADAs puede ser el almacén proveedor/virtual',
                                   almacen_destino_id INT UNSIGNED   NOT NULL  COMMENT 'En SALIDAs puede ser el almacén cliente/virtual',
-                                  stock_anterior    DECIMAL(18,4)   NOT NULL  COMMENT 'Stock en almacén afectado ANTES del movimiento',
-                                  cantidad_movida   DECIMAL(18,4)   NOT NULL,
-                                  stock_nuevo       DECIMAL(18,4)   NOT NULL  COMMENT 'Stock DESPUÉS del movimiento',
-                                  usuario           VARCHAR(100)    NOT NULL  COMMENT 'email del responsable',
-                                  referencia        VARCHAR(60)              COMMENT 'Nro de OC, guía de remisión, etc.',
-                                  observacion       VARCHAR(255),
+                                  stock_anterior     DECIMAL(18,4)   NOT NULL  COMMENT 'Stock en almacén afectado ANTES del movimiento',
+                                  cantidad_movida    DECIMAL(18,4)   NOT NULL,
+                                  stock_nuevo        DECIMAL(18,4)   NOT NULL  COMMENT 'Stock DESPUÉS del movimiento',
+                                  usuario            VARCHAR(100)    NOT NULL  COMMENT 'email del responsable',
+                                  referencia         VARCHAR(60)               COMMENT 'Nro de OC, guía de remisión, etc.',
+                                  observacion        VARCHAR(255),
                                   CONSTRAINT pk_mov          PRIMARY KEY (movimiento_id),
-                                  CONSTRAINT fk_mov_prod     FOREIGN KEY (producto_id)        REFERENCES producto (producto_id) ON DELETE RESTRICT,
+                                  CONSTRAINT fk_mov_prod     FOREIGN KEY (producto_id)         REFERENCES producto (producto_id) ON DELETE RESTRICT,
                                   CONSTRAINT fk_mov_origen   FOREIGN KEY (almacen_origen_id)  REFERENCES almacen  (almacen_id)  ON DELETE RESTRICT,
                                   CONSTRAINT fk_mov_destino  FOREIGN KEY (almacen_destino_id) REFERENCES almacen  (almacen_id)  ON DELETE RESTRICT,
                                   CONSTRAINT ck_mov_cant     CHECK (cantidad_movida > 0)
@@ -144,7 +144,7 @@ CREATE TABLE solicitud_compra (
                                   almacen_origen_id  INT UNSIGNED NOT NULL,
                                   almacen_destino_id INT UNSIGNED NOT NULL,
                                   usuario_solicitante VARCHAR(100) NOT NULL,
-                                  estado             ENUM('PENDIENTE','APROBADA','RECHAZADA') NOT NULL DEFAULT 'PENDIENTE',
+                                  estado              ENUM('PENDIENTE','APROBADA','RECHAZADA') NOT NULL DEFAULT 'PENDIENTE',
                                   CONSTRAINT pk_sol       PRIMARY KEY (solicitud_id),
                                   CONSTRAINT fk_sol_orig  FOREIGN KEY (almacen_origen_id)  REFERENCES almacen (almacen_id) ON DELETE RESTRICT,
                                   CONSTRAINT fk_sol_dest  FOREIGN KEY (almacen_destino_id) REFERENCES almacen (almacen_id) ON DELETE RESTRICT
@@ -157,7 +157,7 @@ CREATE TABLE solicitud_compra_detalle (
                                           cantidad     DECIMAL(18,4) NOT NULL,
                                           CONSTRAINT pk_det      PRIMARY KEY (detalle_id),
                                           CONSTRAINT fk_det_sol  FOREIGN KEY (solicitud_id) REFERENCES solicitud_compra (solicitud_id) ON DELETE CASCADE,
-                                          CONSTRAINT fk_det_prod FOREIGN KEY (producto_id)  REFERENCES producto         (producto_id)  ON DELETE RESTRICT,
+                                          CONSTRAINT fk_det_prod FOREIGN KEY (producto_id)  REFERENCES producto          (producto_id)  ON DELETE RESTRICT,
                                           CONSTRAINT ck_det_cant CHECK (cantidad > 0)
 ) ENGINE=InnoDB;
 
@@ -212,19 +212,21 @@ CREATE TABLE mensaje_ti (
 -- ============================================================
 -- ============================================================
 
--- ── Roles ────────────────────────────────────────────────────
-INSERT INTO rol (nombre) VALUES ('ADMIN'), ('USER'), ('TI');
+-- ── Roles (Modificados a: USUARIO, SUPERVISOR, ADMIN) ────────
+INSERT INTO rol (nombre) VALUES ('USUARIO'), ('SUPERVISOR'), ('ADMIN');
 
--- ── Usuarios (password: InkaPass2024!) ───────────────────────
+-- ── Usuarios (Asignados a los nuevos roles) ──────────────────
 INSERT INTO usuario (nombre, email, password_hash) VALUES
                                                        ('Administrador General', 'admin@inkaproductos.com',
                                                         '$2a$10$M9qdWivDupim72L.lJqwsu26v8RKD9HtOi8gXzb0V1C5LwbUjmgVe'),
-                                                       ('Operador Almacén',      'user@inkaproductos.com',
+                                                       ('Supervisor Almacén',     'supervisor@inkaproductos.com',
                                                         '$2a$10$M9qdWivDupim72L.lJqwsu26v8RKD9HtOi8gXzb0V1C5LwbUjmgVe'),
-                                                       ('Soporte TI',            'gestionti@inkaproductos.com',
+                                                       ('Operador Almacén',      'user@inkaproductos.com',
                                                         '$2a$10$M9qdWivDupim72L.lJqwsu26v8RKD9HtOi8gXzb0V1C5LwbUjmgVe');
 
-INSERT INTO usuario_roles (usuario_id, rol_id) VALUES (1,1),(2,2),(3,3);
+-- Mapeo de usuario_id con rol_id (1=USUARIO, 2=SUPERVISOR, 3=ADMIN)
+-- El admin tiene el id 1 y rol_id 3. El supervisor el id 2 y rol_id 2. El operador el id 3 y rol_id 1.
+INSERT INTO usuario_roles (usuario_id, rol_id) VALUES (1,3),(2,2),(3,1);
 
 -- ── Unidades de Medida (UoM) ─────────────────────────────────
 INSERT INTO unidad_medida (codigo, descripcion) VALUES
@@ -264,32 +266,32 @@ INSERT INTO almacen (nombre, ciudad, direccion) VALUES
 INSERT INTO producto (sku,nombre,descripcion,categoria_id,uom_id,precio_lista) VALUES
                                                                                    ('ELEC-001','Laptop HP 14" Core i5',   'HP 14-DK1023DX, 8GB RAM, 256GB SSD',          1, 1, 2499.0000),
                                                                                    ('ELEC-002','Laptop Lenovo IdeaPad',   'Lenovo IdeaPad 3, 8GB RAM, 512GB SSD',         1, 1, 2199.0000),
-                                                                                   ('ELEC-003','Celular Samsung A15',     'Android 14, 128GB, cámara triple',             1, 1,  699.0000),
-                                                                                   ('ELEC-004','Celular Motorola G54',    'Android 13, 256GB, batería 5000mAh',           1, 1,  749.0000),
-                                                                                   ('ELEC-005','Monitor LG 24" Full HD',  'IPS, 75Hz, entradas HDMI/VGA',                1, 1,  489.0000),
+                                                                                   ('ELEC-003','Celular Samsung A15',     'Android 14, 128GB, cámara triple',              1, 1,  699.0000),
+                                                                                   ('ELEC-004','Celular Motorola G54',    'Android 13, 256GB, batería 5000mAh',            1, 1,  749.0000),
+                                                                                   ('ELEC-005','Monitor LG 24" Full HD',  'IPS, 75Hz, entradas HDMI/VGA',                 1, 1,  489.0000),
                                                                                    ('ELEC-006','Mouse Logitech MX Master','Inalámbrico, ergonómico, recargable',          1, 1,   89.0000),
                                                                                    ('ELEC-007','Teclado Mecánico Redragon','Switch azul, retroiluminado RGB',             1, 1,  159.0000),
                                                                                    ('ELEC-008','Impresora Epson L3250',   'Ecotank multifuncional WiFi',                  1, 1,  699.0000),
-                                                                                   ('ELEC-009','Router TP-Link AX3000',   'WiFi 6, dual band, 4 antenas',                1, 1,  199.0000),
+                                                                                   ('ELEC-009','Router TP-Link AX3000',   'WiFi 6, dual band, 4 antenas',                 1, 1,  199.0000),
                                                                                    ('ELEC-010','USB Kingston 64GB',       'USB 3.2 Gen1, lectura 200MB/s',               1, 1,   29.0000);
 
 -- ── ALIMENTOS ────────────────────────────────────────────────
 INSERT INTO producto (sku,nombre,descripcion,categoria_id,uom_id,precio_lista) VALUES
                                                                                    ('ALIM-001','Arroz Costeño Extra Saco 50kg', 'Arroz blanco extra calidad certificada',  2, 4,  160.0000),
-                                                                                   ('ALIM-002','Arroz Costeño Extra Kg',        'Fraccionado, bolsa 1kg',                  2, 2,    4.2000),
-                                                                                   ('ALIM-003','Arroz Paisana Saco 25kg',       'Arroz corriente a granel',                2, 5,   65.0000),
+                                                                                   ('ALIM-002','Arroz Costeño Extra Kg',        'Fraccionado, bolsa 1kg',                   2, 2,    4.2000),
+                                                                                   ('ALIM-003','Arroz Paisana Saco 25kg',       'Arroz corriente a granel',                 2, 5,   65.0000),
                                                                                    ('ALIM-004','Aceite Primor Botella 1L',      'Aceite vegetal de girasol refinado',      2, 3,    8.5000),
-                                                                                   ('ALIM-005','Aceite Cocinero Garrafa 5L',    'Aceite mixto bidon familiar',             2, 3,   38.0000),
-                                                                                   ('ALIM-006','Leche Gloria Evap. Six-pack',   'Lata 400g × 6, leche entera',            2, 6,   26.5000),
-                                                                                   ('ALIM-007','Leche Gloria Evap. Lata',       'Lata individual 400g',                   2,13,    4.8000),
-                                                                                   ('ALIM-008','Galletas Oreo Paquete 12u',     '12 paquetes × 39g c/u',                  2, 7,   18.0000),
-                                                                                   ('ALIM-009','Galletas Soda Field Caja',      'Caja 630g display surtido',              2, 8,   12.5000),
-                                                                                   ('ALIM-010','Fideos Don Vittorio Tallarin',  'Paquete 500g, pasta larga',              2,12,    3.8000),
-                                                                                   ('ALIM-011','Azúcar Rubia Cartavio Kg',      'Azúcar rubia fraccionada 1kg',           2, 2,    3.6000),
-                                                                                   ('ALIM-012','Azúcar Rubia Cartavio Saco 50', 'Saco 50kg para distribuidoras',          2, 4,  148.0000),
+                                                                                   ('ALIM-005','Aceite Cocinero Garrafa 5L',    'Aceite mixto bidon familiar',              2, 3,   38.0000),
+                                                                                   ('ALIM-006','Leche Gloria Evap. Six-pack',   'Lata 400g × 6, leche entera',             2, 6,   26.5000),
+                                                                                   ('ALIM-007','Leche Gloria Evap. Lata',       'Lata individual 400g',                    2,13,    4.8000),
+                                                                                   ('ALIM-008','Galletas Oreo Paquete 12u',     '12 paquetes × 39g c/u',                   2, 7,   18.0000),
+                                                                                   ('ALIM-009','Galletas Soda Field Caja',      'Caja 630g display surtido',               2, 8,   12.5000),
+                                                                                   ('ALIM-010','Fideos Don Vittorio Tallarin',  'Paquete 500g, pasta larga',               2,12,    3.8000),
+                                                                                   ('ALIM-011','Azúcar Rubia Cartavio Kg',      'Azúcar rubia fraccionada 1kg',            2, 2,    3.6000),
+                                                                                   ('ALIM-012','Azúcar Rubia Cartavio Saco 50', 'Saco 50kg para distribuidoras',           2, 4,  148.0000),
                                                                                    ('ALIM-013','Aceite Vegetal Palma 1L',       'Aceite de palma refinado exportación',   2, 3,    7.2000),
                                                                                    ('ALIM-014','Café Altomayo Molido 250g',     'Café peruano de altura, bolsa zip',      2,12,   14.5000),
-                                                                                   ('ALIM-015','Atún Real en Aceite Lata',      'Lata 170g, atún aleta amarilla',         2,13,    5.9000);
+                                                                                   ('ALIM-015','Atún Real en Aceite Lata',      'Lata 170g, atún aleta amarilla',          2,13,    5.9000);
 
 -- ── FERRETERÍA ───────────────────────────────────────────────
 INSERT INTO producto (sku,nombre,descripcion,categoria_id,uom_id,precio_lista) VALUES
@@ -300,26 +302,26 @@ INSERT INTO producto (sku,nombre,descripcion,categoria_id,uom_id,precio_lista) V
                                                                                    ('FERR-005','Pintura Sherwin Esmalte Galón', 'Esmalte sintético brillante blanco',     3,10,   89.0000),
                                                                                    ('FERR-006','Thinner Acrílico 1L',           'Thinner industrial para esmaltes',       3, 3,   12.0000),
                                                                                    ('FERR-007','Taladro Bosch GSB 13 RE',       'Percutor 650W, maletín incluido',        3, 1,  269.0000),
-                                                                                   ('FERR-008','Martillo Stanley 16oz',         'Mango fibra de vidrio antivibraciones',  3, 1,   38.0000),
+                                                                                   ('FERR-008','Martillo Stanley 16oz',         'Mango fibra de vidrio antivibraciones', 3, 1,   38.0000),
                                                                                    ('FERR-009','Cinta Métrica Stanley 5m',      'Carcasa ABS, regla magnética',           3, 1,   22.0000),
-                                                                                   ('FERR-010','Llave Francesa 12"',            'Acero cromo vanadio, mango antidesliz',  3, 1,   35.0000),
+                                                                                   ('FERR-010','Llave Francesa 12"',            'Acero cromo vanadio, mango antidesliz', 3, 1,   35.0000),
                                                                                    ('FERR-011','Clavos 2.5" Caja 1kg',          'Clavos de construcción brillantes',      3, 8,    8.5000),
                                                                                    ('FERR-012','Malla Raschel Rollo 4m×50m',   'Malla sombra 80%, verde',                3,14,  185.0000),
-                                                                                   ('FERR-013','Tubo PVC 4" × 3m',             'PVC presión C-10, unión espiga',         3, 1,   28.0000),
+                                                                                   ('FERR-013','Tubo PVC 4" × 3m',              'PVC presión C-10, unión espiga',         3, 1,   28.0000),
                                                                                    ('FERR-014','Pala Bellota Hoja Cuadrada',    'Pala con mango de madera eucalipto',     3, 1,   52.0000),
                                                                                    ('FERR-015','Escalera Aluminio 8 peldaños',  'Tijera doble hoja, carga 120kg',         3, 1,  189.0000);
 
 -- ── OFICINA ──────────────────────────────────────────────────
 INSERT INTO producto (sku,nombre,descripcion,categoria_id,uom_id,precio_lista) VALUES
-                                                                                   ('OFIC-001','Papel Atlas Bond A4 Resma',     'Resma 500h, 75g/m², blancura 91%',       4, 1,   22.5000),
-                                                                                   ('OFIC-002','Lapicero BIC Cristal Caja',     'Caja 50 unidades, tinta azul',           4, 8,   18.0000),
-                                                                                   ('OFIC-003','Folder Manila Paquete 25u',     'Tamaño A4, color manila',                4, 7,   12.0000),
+                                                                                   ('OFIC-001','Papel Atlas Bond A4 Resma',     'Resma 500h, 75g/m², blancura 91%',        4, 1,   22.5000),
+                                                                                   ('OFIC-002','Lapicero BIC Cristal Caja',     'Caja 50 unidades, tinta azul',            4, 8,   18.0000),
+                                                                                   ('OFIC-003','Folder Manila Paquete 25u',     'Tamaño A4, color manila',                 4, 7,   12.0000),
                                                                                    ('OFIC-004','Toner HP 85A (CE285A)',         'Toner original, rendimiento 1600 pág.',  4, 1,  159.0000),
-                                                                                   ('OFIC-005','Archivador Palanca Ancho',      'Lomo 75mm, tapa dura kraft',             4, 1,   12.5000),
+                                                                                   ('OFIC-005','Archivador Palanca Ancho',      'Lomo 75mm, tapa dura kraft',              4, 1,   12.5000),
                                                                                    ('OFIC-006','Silla Ejecutiva Ergonómica',    'Malla transpirable, soporte lumbar',     4, 1,  389.0000),
-                                                                                   ('OFIC-007','Escritorio Melamina 1.20m',     'Con cajones, tapa melamine 25mm',        4, 1,  399.0000),
+                                                                                   ('OFIC-007','Escritorio Melamina 1.20m',     'Con cajones, tapa melamine 25mm',         4, 1,  399.0000),
                                                                                    ('OFIC-008','Pizarra Acrílica 120×80',       'Marco aluminio, incluye mota+plumón',    4, 1,  149.0000),
-                                                                                   ('OFIC-009','Post-it 3M 76×76 mm Bloque',    'Bloque 100h, colores neón surtidos',    4, 1,    8.9000),
+                                                                                   ('OFIC-009','Post-it 3M 76×76 mm Bloque',    'Bloque 100h, colores neón surtidos',     4, 1,    8.9000),
                                                                                    ('OFIC-010','Tijera Maped Essentials 21cm',  'Acero inox, mango ergonómico bicolor',  4, 1,    9.5000);
 
 -- ── INVENTARIO INICIAL ───────────────────────────────────────
@@ -371,8 +373,8 @@ INSERT INTO movimiento_stock
 SELECT
     'ENTRADA',
     producto_id,
-    1,           -- origen = Lima (apertura desde el mismo almacén)
-    1,           -- destino = Lima
+    1,            -- origen = Lima (apertura desde el mismo almacén)
+    1,            -- destino = Lima
     0.0000,
     CASE WHEN sku LIKE 'ELEC%' THEN 50.0000 ELSE 200.0000 END,
     CASE WHEN sku LIKE 'ELEC%' THEN 50.0000 ELSE 200.0000 END,
@@ -454,7 +456,6 @@ VALUES
 
 -- ──────────────────────────────────────────────────────────────
 -- QUERY 1: Kardex completo de un producto en todos los almacenes
---   Cambia 'ALIM-001' por el SKU que necesites demostrar
 -- ──────────────────────────────────────────────────────────────
 SELECT
     ms.movimiento_id,
@@ -526,7 +527,6 @@ ORDER BY a.nombre, cat.nombre, p.sku;
 
 -- ──────────────────────────────────────────────────────────────
 -- QUERY 4: Detección de inconsistencias Kardex vs Inventario
---   (Para auditoría ante cliente — muestra integridad del sistema)
 -- ──────────────────────────────────────────────────────────────
 SELECT
     a.nombre                                AS almacen,
@@ -554,6 +554,3 @@ FROM inventario i
     AND ultimo_mov.almacen_id   = i.almacen_id
 HAVING diferencia <> 0
 ORDER BY ABS(diferencia) DESC;
-
-
-SELECT * FROM movimiento_stock ORDER BY fecha DESC;

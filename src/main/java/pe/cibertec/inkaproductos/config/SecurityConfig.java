@@ -43,29 +43,32 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-            .cors(c -> c.configurationSource(corsConfigurationSource()))
-            .csrf(c -> c.disable())
-            .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .authorizeHttpRequests(auth -> auth
-                // Público
-                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                .requestMatchers("/api/auth/**").permitAll()
-                .requestMatchers("/api/stock/eventos").permitAll()
+                .cors(c -> c.configurationSource(corsConfigurationSource()))
+                .csrf(c -> c.disable())
+                .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authorizeHttpRequests(auth -> auth
+                        // Público
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/api/stock/eventos").permitAll()
 
-                // Solo ADMIN
-                .requestMatchers(HttpMethod.POST, "/api/traslados").hasRole("ADMIN")
-                .requestMatchers("/api/solicitudes/*/aprobar").hasRole("ADMIN")
-                .requestMatchers("/api/solicitudes/*/rechazar").hasRole("ADMIN")
-                .requestMatchers("/api/solicitudes/pendientes").hasRole("ADMIN")
+                        // Solo ADMIN: Operaciones críticas
+                        .requestMatchers(HttpMethod.POST, "/api/traslados").hasAnyRole("ADMIN", "SUPERVISOR")
+                        .requestMatchers("/api/usuarios/**").hasRole("ADMIN")
 
-                // USER y ADMIN
-                .requestMatchers(HttpMethod.POST, "/api/solicitudes").hasAnyRole("USER", "ADMIN")
-                .requestMatchers("/api/solicitudes/mis").hasAnyRole("USER", "ADMIN")
+                        // ADMIN y SUPERVISOR: Gestión de solicitudes
+                        .requestMatchers("/api/solicitudes/*/aprobar").hasAnyRole("ADMIN", "SUPERVISOR")
+                        .requestMatchers("/api/solicitudes/*/rechazar").hasAnyRole("ADMIN", "SUPERVISOR")
+                        .requestMatchers("/api/solicitudes/pendientes").hasAnyRole("ADMIN", "SUPERVISOR")
 
-                // Catálogos autenticados
-                .anyRequest().authenticated()
-            )
-            .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
+                        // ADMIN, SUPERVISOR y USER: Acciones básicas y personales
+                        .requestMatchers(HttpMethod.POST, "/api/solicitudes").hasAnyRole("ADMIN", "SUPERVISOR", "USUARIO")
+                        .requestMatchers("/api/solicitudes/mis").hasAnyRole("ADMIN", "SUPERVISOR", "USUARIO")
+
+                        // Catálogos (Productos, Categorías, Almacenes) - Solo requiere estar logueado
+                        .anyRequest().authenticated()
+                )
+                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }

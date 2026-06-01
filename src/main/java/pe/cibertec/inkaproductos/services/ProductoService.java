@@ -2,6 +2,7 @@ package pe.cibertec.inkaproductos.services;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import pe.cibertec.inkaproductos.dto.ProductoDTO;
 import pe.cibertec.inkaproductos.models.Producto;
 import pe.cibertec.inkaproductos.repositories.InventarioRepository;
@@ -18,6 +19,7 @@ public class ProductoService {
     private final ProductoRepository productoRepo;
     private final InventarioRepository inventarioRepo;
 
+    @Transactional(readOnly = true)
     public List<ProductoDTO> listar(Integer categoriaId, Integer almacenId) {
 
         // Stock total de todos los almacenes en una sola query

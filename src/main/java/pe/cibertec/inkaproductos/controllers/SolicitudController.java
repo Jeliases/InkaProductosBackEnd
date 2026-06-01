@@ -4,9 +4,11 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import pe.cibertec.inkaproductos.dto.SolicitudCompraDTO;
 import pe.cibertec.inkaproductos.dto.SolicitudRequest;
 import pe.cibertec.inkaproductos.services.SolicitudService;
 
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -27,12 +29,12 @@ public class SolicitudController {
     }
 
     @GetMapping("/pendientes")
-    public ResponseEntity<?> pendientes() {
+    public ResponseEntity<List<SolicitudCompraDTO>> pendientes() {
         return ResponseEntity.ok(solicitudService.pendientes());
     }
 
     @GetMapping("/mis")
-    public ResponseEntity<?> misSolicitudes(Authentication auth) {
+    public ResponseEntity<List<SolicitudCompraDTO>> misSolicitudes(Authentication auth) {
         return ResponseEntity.ok(solicitudService.misSolicitudes(auth.getName()));
     }
 
