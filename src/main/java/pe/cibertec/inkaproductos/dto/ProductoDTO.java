@@ -12,6 +12,7 @@ public class ProductoDTO {
     private String categoria;
     private String uom;
     private BigDecimal precioLista;
+    private boolean activo;             // Nuevo campo para indicar si está activo
     private BigDecimal stockTotal;      // suma en todos los almacenes
     private BigDecimal stockAlmacen;    // stock en el almacén filtrado (null si no se filtra)
 }

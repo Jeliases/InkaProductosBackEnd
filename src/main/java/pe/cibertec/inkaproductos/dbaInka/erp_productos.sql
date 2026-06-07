@@ -73,6 +73,15 @@ CREATE TABLE producto (
                           CONSTRAINT ck_prod_prc  CHECK (precio_lista >= 0)
 ) ENGINE=InnoDB COMMENT='Maestro de productos';
 
+CREATE TABLE auditoria_productos (
+                                     id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                                     producto_id INT UNSIGNED NOT NULL, -- CORREGIDO: Añadido UNSIGNED
+                                     usuario_email VARCHAR(255) NOT NULL,
+                                     accion VARCHAR(50) NOT NULL,
+                                     detalles_cambio TEXT,
+                                     fecha TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                                     FOREIGN KEY (producto_id) REFERENCES producto(producto_id)
+);
 -- ============================================================
 -- 4. ALMACENES
 -- ============================================================

@@ -52,20 +52,22 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/stock/eventos").permitAll()
 
-                        // Solo ADMIN: Operaciones críticas
-                        .requestMatchers(HttpMethod.POST, "/api/traslados").hasAnyRole("ADMIN", "SUPERVISOR")
-                        .requestMatchers("/api/usuarios/**").hasRole("ADMIN")
+                        // --- REGLAS DE PRODUCTOS REFACTORIZADAS ---
+                        // 1. Lectura para todos los usuarios autenticados
+                        .requestMatchers(HttpMethod.GET, "/api/productos", "/api/productos/**").hasAnyRole("ADMIN", "SUPERVISOR", "USUARIO")
+                        // 2. Escritura (POST, PUT, DELETE) solo para ADMIN
+                        .requestMatchers("/api/productos/**").hasRole("ADMIN")
 
-                        // ADMIN y SUPERVISOR: Gestión de solicitudes
+                        // --- OTRAS REGLAS ---
+                        .requestMatchers("/api/usuarios/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/traslados").hasAnyRole("ADMIN", "SUPERVISOR")
                         .requestMatchers("/api/solicitudes/*/aprobar").hasAnyRole("ADMIN", "SUPERVISOR")
                         .requestMatchers("/api/solicitudes/*/rechazar").hasAnyRole("ADMIN", "SUPERVISOR")
                         .requestMatchers("/api/solicitudes/pendientes").hasAnyRole("ADMIN", "SUPERVISOR")
-
-                        // ADMIN, SUPERVISOR y USER: Acciones básicas y personales
                         .requestMatchers(HttpMethod.POST, "/api/solicitudes").hasAnyRole("ADMIN", "SUPERVISOR", "USUARIO")
                         .requestMatchers("/api/solicitudes/mis").hasAnyRole("ADMIN", "SUPERVISOR", "USUARIO")
-
-                        // Catálogos (Productos, Categorías, Almacenes) - Solo requiere estar logueado
+                        
+                        // Cualquier otra petición requiere autenticación
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);

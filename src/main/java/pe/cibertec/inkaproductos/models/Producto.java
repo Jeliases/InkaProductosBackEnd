@@ -4,6 +4,9 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.Data;
 import java.math.BigDecimal;
+import java.util.List;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 @Data
 @Entity
@@ -28,4 +31,15 @@ public class Producto {
 
     private BigDecimal precioLista;
     private boolean activo = true;
+
+    @Transient
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY) // <--- ¡ESTA ES LA CLAVE!
+    private List<StockInicialDTO> stocksIniciales;
+
+    @Data
+    public static class StockInicialDTO {
+        private Almacen almacen; // O tu entidad de Almacen
+        private Integer cantidad;
+    }
+
 }
